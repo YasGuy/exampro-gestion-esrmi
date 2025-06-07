@@ -1,12 +1,31 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Calendar, Edit, Trash } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const ExamsManagement = () => {
-  const exams = [
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [editingExam, setEditingExam] = useState(null);
+  const [newExam, setNewExam] = useState({
+    module: '',
+    date: '',
+    time: '',
+    room: '',
+    teacher: '',
+    students: '',
+    status: 'En attente'
+  });
+  const { toast } = useToast();
+
+  const [exams, setExams] = useState([
     { 
       id: 1, 
       module: 'Mathématiques Avancées', 
@@ -37,7 +56,11 @@ const ExamsManagement = () => {
       students: 42,
       status: 'En attente'
     }
-  ];
+  ]);
+
+  const availableModules = ['Mathématiques Avancées', 'Programmation Web', 'Base de Données', 'Gestion de Projet', 'Réseaux', 'Algorithmique'];
+  const availableTeachers = ['Dr. Mohamed Alami', 'Prof. Fatima Bennani', 'Dr. Hassan El Idrissi'];
+  const availableRooms = ['A201', 'A202', 'B105', 'B106', 'C302', 'C303'];
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -46,6 +69,74 @@ const ExamsManagement = () => {
       case 'En attente': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleAddExam = () => {
+    if (!newExam.module || !newExam.date || !newExam.time || !newExam.room || !newExam.teacher || !newExam.students) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const exam = {
+      id: exams.length + 1,
+      ...newExam,
+      students: parseInt(newExam.students)
+    };
+    setExams([...exams, exam]);
+    setNewExam({ module: '', date: '', time: '', room: '', teacher: '', students: '', status: 'En attente' });
+    setIsAddDialogOpen(false);
+    toast({
+      title: "Succès",
+      description: "Examen programmé avec succès"
+    });
+  };
+
+  const handleEditExam = () => {
+    if (!editingExam.module || !editingExam.date || !editingExam.time || !editingExam.room || !editingExam.teacher || !editingExam.students) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const updatedExam = {
+      ...editingExam,
+      students: parseInt(editingExam.students)
+    };
+    setExams(exams.map(e => e.id === editingExam.id ? updatedExam : e));
+    setIsEditDialogOpen(false);
+    setEditingExam(null);
+    toast({
+      title: "Succès",
+      description: "Examen modifié avec succès"
+    });
+  };
+
+  const handleDeleteExam = (examId) => {
+    setExams(exams.filter(e => e.id !== examId));
+    toast({
+      title: "Succès",
+      description: "Examen supprimé avec succès"
+    });
+  };
+
+  const openEditDialog = (exam) => {
+    setEditingExam({ ...exam, students: exam.students.toString() });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleViewCalendar = () => {
+    setIsCalendarOpen(true);
+    toast({
+      title: "Planning général",
+      description: "Fonctionnalité de calendrier à implémenter"
+    });
   };
 
   return (
@@ -58,14 +149,92 @@ const ExamsManagement = () => {
           </p>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleViewCalendar}>
             <Calendar className="mr-2 h-4 w-4" />
             Planning général
           </Button>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Programmer un examen
-          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Programmer un examen
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Programmer un nouvel examen</DialogTitle>
+                <DialogDescription>
+                  Remplissez les détails de l'examen
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Select value={newExam.module} onValueChange={(value) => setNewExam({...newExam, module: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un module" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableModules.map((module) => (
+                      <SelectItem key={module} value={module}>{module}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="date"
+                  value={newExam.date}
+                  onChange={(e) => setNewExam({...newExam, date: e.target.value})}
+                />
+                <Input
+                  placeholder="Horaire (ex: 09:00-11:00)"
+                  value={newExam.time}
+                  onChange={(e) => setNewExam({...newExam, time: e.target.value})}
+                />
+                <Select value={newExam.room} onValueChange={(value) => setNewExam({...newExam, room: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une salle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRooms.map((room) => (
+                      <SelectItem key={room} value={room}>{room}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={newExam.teacher} onValueChange={(value) => setNewExam({...newExam, teacher: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un enseignant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTeachers.map((teacher) => (
+                      <SelectItem key={teacher} value={teacher}>{teacher}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Nombre d'étudiants"
+                  type="number"
+                  value={newExam.students}
+                  onChange={(e) => setNewExam({...newExam, students: e.target.value})}
+                />
+                <Select value={newExam.status} onValueChange={(value) => setNewExam({...newExam, status: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="En attente">En attente</SelectItem>
+                    <SelectItem value="Programmé">Programmé</SelectItem>
+                    <SelectItem value="Confirmé">Confirmé</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                  Annuler
+                </Button>
+                <Button onClick={handleAddExam}>
+                  Programmer
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -106,10 +275,10 @@ const ExamsManagement = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => openEditDialog(exam)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handleDeleteExam(exam.id)}>
                         <Trash className="h-4 w-4" />
                       </Button>
                     </div>
@@ -120,6 +289,86 @@ const ExamsManagement = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier l'examen</DialogTitle>
+            <DialogDescription>
+              Modifiez les détails de l'examen
+            </DialogDescription>
+          </DialogHeader>
+          {editingExam && (
+            <div className="space-y-4">
+              <Select value={editingExam.module} onValueChange={(value) => setEditingExam({...editingExam, module: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un module" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableModules.map((module) => (
+                    <SelectItem key={module} value={module}>{module}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="date"
+                value={editingExam.date}
+                onChange={(e) => setEditingExam({...editingExam, date: e.target.value})}
+              />
+              <Input
+                placeholder="Horaire (ex: 09:00-11:00)"
+                value={editingExam.time}
+                onChange={(e) => setEditingExam({...editingExam, time: e.target.value})}
+              />
+              <Select value={editingExam.room} onValueChange={(value) => setEditingExam({...editingExam, room: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une salle" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableRooms.map((room) => (
+                    <SelectItem key={room} value={room}>{room}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={editingExam.teacher} onValueChange={(value) => setEditingExam({...editingExam, teacher: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un enseignant" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTeachers.map((teacher) => (
+                    <SelectItem key={teacher} value={teacher}>{teacher}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Nombre d'étudiants"
+                type="number"
+                value={editingExam.students}
+                onChange={(e) => setEditingExam({...editingExam, students: e.target.value})}
+              />
+              <Select value={editingExam.status} onValueChange={(value) => setEditingExam({...editingExam, status: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="En attente">En attente</SelectItem>
+                  <SelectItem value="Programmé">Programmé</SelectItem>
+                  <SelectItem value="Confirmé">Confirmé</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleEditExam}>
+              Sauvegarder
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
