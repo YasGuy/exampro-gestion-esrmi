@@ -1,9 +1,15 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import MyGrades from '@/components/modules/MyGrades';
+import MySchedule from '@/components/modules/MySchedule';
+import Transcripts from '@/components/modules/Transcripts';
 
 const EtudiantDashboard = ({ activeModule, user }) => {
+  if (activeModule === 'my-grades') return <MyGrades user={user} />;
+  if (activeModule === 'my-schedule') return <MySchedule user={user} />;
+  if (activeModule === 'transcripts') return <Transcripts user={user} />;
+
   const upcomingExams = [
     { module: 'Mathématiques Avancées', date: '15 Jan 2025', time: '9h00-11h00', room: 'A201' },
     { module: 'Gestion de Projet', date: '18 Jan 2025', time: '14h00-16h00', room: 'B105' },

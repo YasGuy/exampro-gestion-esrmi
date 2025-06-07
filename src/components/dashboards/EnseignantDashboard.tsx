@@ -1,10 +1,13 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import GradesManagement from '@/components/modules/GradesManagement';
+import MyModules from '@/components/modules/MyModules';
+import ExamSchedule from '@/components/modules/ExamSchedule';
 
 const EnseignantDashboard = ({ activeModule, user }) => {
   if (activeModule === 'grades') return <GradesManagement />;
+  if (activeModule === 'my-modules') return <MyModules user={user} />;
+  if (activeModule === 'exam-schedule') return <ExamSchedule user={user} />;
 
   const myModules = [
     { name: 'Mathématiques Avancées', students: 45, nextExam: '15 Jan 2025' },

@@ -1,10 +1,11 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import UsersManagement from '@/components/modules/UsersManagement';
+import SystemMonitoring from '@/components/modules/SystemMonitoring';
 
 const AdministrateurDashboard = ({ activeModule }) => {
   if (activeModule === 'users') return <UsersManagement />;
+  if (activeModule === 'system') return <SystemMonitoring />;
 
   const systemStats = [
     { title: 'Utilisateurs actifs', value: '289', description: 'Dernières 24h' },
