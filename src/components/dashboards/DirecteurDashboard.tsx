@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,9 @@ import StudentsManagement from '@/components/modules/StudentsManagement';
 import TeachersManagement from '@/components/modules/TeachersManagement';
 import ModulesManagement from '@/components/modules/ModulesManagement';
 import ExamsManagement from '@/components/modules/ExamsManagement';
+import SallesManagement from '@/components/modules/SallesManagement';
+import RapportsManagement from '@/components/modules/RapportsManagement';
+import FilieresManagement from '@/components/modules/FilieresManagement';
 import { useToast } from '@/hooks/use-toast';
 
 const DirecteurDashboard = ({ activeModule }) => {
@@ -43,6 +45,9 @@ const DirecteurDashboard = ({ activeModule }) => {
   if (activeModule === 'teachers') return <TeachersManagement />;
   if (activeModule === 'modules') return <ModulesManagement />;
   if (activeModule === 'exams') return <ExamsManagement />;
+  if (activeModule === 'salles') return <SallesManagement />;
+  if (activeModule === 'rapports') return <RapportsManagement />;
+  if (activeModule === 'filieres') return <FilieresManagement />;
 
   const handleScheduleExam = () => {
     if (!newExam.module || !newExam.date || !newExam.time || !newExam.room) {
