@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,7 @@ import {
   Activity, 
   HardDrive, 
   Cpu, 
-  Memory, 
+  MonitorSpeaker, 
   RefreshCw,
   AlertTriangle,
   CheckCircle
@@ -224,7 +223,7 @@ const SystemMonitoring = () => {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-2">
-                  <Memory className="h-4 w-4 text-muted-foreground" />
+                  <MonitorSpeaker className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">Mémoire</span>
                 </div>
                 <span className="text-sm font-medium">{systemMetrics.memory.used}/{systemMetrics.memory.total} GB</span>

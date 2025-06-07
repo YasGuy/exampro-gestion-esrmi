@@ -74,6 +74,7 @@ const MyGrades = ({ user }) => {
   const totalCredits = validatedGrades.reduce((sum, grade) => sum + grade.credits, 0);
   const weightedSum = validatedGrades.reduce((sum, grade) => sum + (grade.grade * grade.credits), 0);
   const averageGrade = totalCredits > 0 ? (weightedSum / totalCredits).toFixed(2) : 0;
+  const averageGradeNumber = Number(averageGrade);
   const validatedModules = validatedGrades.length;
 
   const getGradeColor = (grade) => {
@@ -145,10 +146,10 @@ const MyGrades = ({ user }) => {
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold">
-              {averageGrade >= 16 ? 'Très Bien' : 
-               averageGrade >= 14 ? 'Bien' : 
-               averageGrade >= 12 ? 'Assez Bien' : 
-               averageGrade >= 10 ? 'Passable' : 'Insuffisant'}
+              {averageGradeNumber >= 16 ? 'Très Bien' : 
+               averageGradeNumber >= 14 ? 'Bien' : 
+               averageGradeNumber >= 12 ? 'Assez Bien' : 
+               averageGradeNumber >= 10 ? 'Passable' : 'Insuffisant'}
             </div>
           </CardContent>
         </Card>
