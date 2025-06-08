@@ -41,6 +41,7 @@ const DirecteurDashboard = ({ activeModule }) => {
     semester: ''
   });
 
+  // Route to specific modules
   if (activeModule === 'students') return <StudentsManagement />;
   if (activeModule === 'teachers') return <TeachersManagement />;
   if (activeModule === 'modules') return <ModulesManagement />;
