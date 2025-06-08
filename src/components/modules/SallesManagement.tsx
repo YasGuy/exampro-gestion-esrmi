@@ -1,39 +1,50 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Edit, Trash, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, MapPin, Users, Monitor } from 'lucide-react';
+import { salleService, Salle } from '@/services/salleService';
 
 const SallesManagement = () => {
-  const [salles, setSalles] = useState([
-    { id: 1, name: 'Amphithéâtre A', type: 'Amphithéâtre', capacity: 200, equipment: ['Projecteur', 'Micro'], building: 'Bâtiment A', floor: 'RDC', status: 'Disponible' },
-    { id: 2, name: 'Salle TD 101', type: 'TD', capacity: 30, equipment: ['Tableau'], building: 'Bâtiment B', floor: '1er', status: 'Occupée' },
-    { id: 3, name: 'Labo Info 1', type: 'Laboratoire', capacity: 25, equipment: ['Ordinateurs', 'Projecteur'], building: 'Bâtiment C', floor: '2ème', status: 'Maintenance' },
-    { id: 4, name: 'Salle Conf 201', type: 'Conférence', capacity: 50, equipment: ['Projecteur', 'Vidéoconférence'], building: 'Bâtiment A', floor: '2ème', status: 'Disponible' },
-  ]);
-
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingSalle, setEditingSalle] = useState(null);
+  const [salles, setSalles] = useState<Salle[]>([]);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingSalle, setEditingSalle] = useState<Salle | null>(null);
+  const [loading, setLoading] = useState(true);
   const [newSalle, setNewSalle] = useState({
     name: '',
-    type: '',
     capacity: '',
-    equipment: [],
-    building: '',
-    floor: '',
-    status: 'Disponible'
+    type: '',
+    equipment: ''
   });
-
   const { toast } = useToast();
 
-  const handleAddSalle = () => {
-    if (!newSalle.name || !newSalle.type || !newSalle.capacity || !newSalle.building) {
+  useEffect(() => {
+    fetchSalles();
+  }, []);
+
+  const fetchSalles = async () => {
+    try {
+      const data = await salleService.getAll();
+      setSalles(data);
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les salles",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddSalle = async () => {
+    if (!newSalle.name || !newSalle.capacity || !newSalle.type) {
       toast({
         title: "Erreur",
         description: "Veuillez remplir tous les champs obligatoires",
@@ -42,40 +53,66 @@ const SallesManagement = () => {
       return;
     }
 
-    const salle = {
-      id: Date.now(),
-      ...newSalle,
-      capacity: parseInt(newSalle.capacity)
-    };
-
-    setSalles([...salles, salle]);
-    setNewSalle({ name: '', type: '', capacity: '', equipment: [], building: '', floor: '', status: 'Disponible' });
-    setIsDialogOpen(false);
-    toast({
-      title: "Succès",
-      description: "Salle ajoutée avec succès"
-    });
+    try {
+      await salleService.create({
+        ...newSalle,
+        capacity: parseInt(newSalle.capacity)
+      });
+      toast({
+        title: "Succès",
+        description: "Salle créée avec succès"
+      });
+      setNewSalle({ name: '', capacity: '', type: '', equipment: '' });
+      setIsAddDialogOpen(false);
+      fetchSalles();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la création de la salle",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleEditSalle = () => {
-    setSalles(salles.map(s => s.id === editingSalle.id ? { ...editingSalle, capacity: parseInt(editingSalle.capacity) } : s));
-    setEditingSalle(null);
-    setIsDialogOpen(false);
-    toast({
-      title: "Succès",
-      description: "Salle modifiée avec succès"
-    });
+  const handleEditSalle = async () => {
+    if (!editingSalle) return;
+
+    try {
+      await salleService.update(editingSalle.id, editingSalle);
+      toast({
+        title: "Succès",
+        description: "Salle modifiée avec succès"
+      });
+      setIsEditDialogOpen(false);
+      setEditingSalle(null);
+      fetchSalles();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la modification de la salle",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteSalle = (id) => {
-    setSalles(salles.filter(s => s.id !== id));
-    toast({
-      title: "Succès",
-      description: "Salle supprimée avec succès"
-    });
+  const handleDeleteSalle = async (id: number) => {
+    try {
+      await salleService.delete(id);
+      toast({
+        title: "Succès",
+        description: "Salle supprimée avec succès"
+      });
+      fetchSalles();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la suppression de la salle",
+        variant: "destructive"
+      });
+    }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'Disponible': return 'bg-green-100 text-green-800';
       case 'Occupée': return 'bg-red-100 text-red-800';
@@ -84,25 +121,83 @@ const SallesManagement = () => {
     }
   };
 
-  const equipmentOptions = ['Projecteur', 'Micro', 'Tableau', 'Ordinateurs', 'Vidéoconférence', 'Climatisation'];
+  const openEditDialog = (salle: Salle) => {
+    setEditingSalle({ ...salle });
+    setIsEditDialogOpen(true);
+  };
+
+  if (loading) {
+    return <div>Chargement...</div>;
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Gestion des Salles</h2>
-          <p className="text-muted-foreground">Gérer les salles de classe et équipements</p>
+          <p className="text-muted-foreground">
+            Gérer les salles de classe et leurs équipements
+          </p>
         </div>
-        <Button onClick={() => { setEditingSalle(null); setIsDialogOpen(true); }}>
-          <Plus className="mr-2 h-4 w-4" />
-          Ajouter une Salle
-        </Button>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Ajouter une salle
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Ajouter une nouvelle salle</DialogTitle>
+              <DialogDescription>
+                Remplissez les informations de la salle
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
+                placeholder="Nom de la salle (ex: A201)"
+                value={newSalle.name}
+                onChange={(e) => setNewSalle({...newSalle, name: e.target.value})}
+              />
+              <Input
+                placeholder="Capacité"
+                type="number"
+                value={newSalle.capacity}
+                onChange={(e) => setNewSalle({...newSalle, capacity: e.target.value})}
+              />
+              <Select value={newSalle.type} onValueChange={(value) => setNewSalle({...newSalle, type: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Type de salle" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Amphithéâtre">Amphithéâtre</SelectItem>
+                  <SelectItem value="Salle de cours">Salle de cours</SelectItem>
+                  <SelectItem value="Laboratoire">Laboratoire</SelectItem>
+                  <SelectItem value="Salle informatique">Salle informatique</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Équipements (optionnel)"
+                value={newSalle.equipment}
+                onChange={(e) => setNewSalle({...newSalle, equipment: e.target.value})}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleAddSalle}>
+                Ajouter
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Salles</CardTitle>
+            <CardTitle className="text-sm font-medium">Total des salles</CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -111,37 +206,32 @@ const SallesManagement = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Salles Disponibles</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Salles disponibles</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{salles.filter(s => s.status === 'Disponible').length}</div>
+            <div className="text-2xl font-bold">
+              {salles.filter(s => s.status === 'Disponible').length}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Capacité Totale</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Capacité totale</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{salles.reduce((sum, s) => sum + s.capacity, 0)}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">En Maintenance</CardTitle>
-            <Monitor className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{salles.filter(s => s.status === 'Maintenance').length}</div>
+            <div className="text-2xl font-bold">
+              {salles.reduce((sum, salle) => sum + salle.capacity, 0)}
+            </div>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Liste des Salles</CardTitle>
-          <CardDescription>Gérer toutes les salles de l'établissement</CardDescription>
+          <CardTitle>Liste des salles</CardTitle>
+          <CardDescription>
+            {salles.length} salles enregistrées
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -150,8 +240,6 @@ const SallesManagement = () => {
                 <TableHead>Nom</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Capacité</TableHead>
-                <TableHead>Bâtiment</TableHead>
-                <TableHead>Étage</TableHead>
                 <TableHead>Équipements</TableHead>
                 <TableHead>Statut</TableHead>
                 <TableHead>Actions</TableHead>
@@ -163,37 +251,19 @@ const SallesManagement = () => {
                   <TableCell className="font-medium">{salle.name}</TableCell>
                   <TableCell>{salle.type}</TableCell>
                   <TableCell>{salle.capacity}</TableCell>
-                  <TableCell>{salle.building}</TableCell>
-                  <TableCell>{salle.floor}</TableCell>
+                  <TableCell>{salle.equipment || 'Aucun'}</TableCell>
                   <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {salle.equipment.map((eq, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {eq}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(salle.status)}>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(salle.status)}`}>
                       {salle.status}
-                    </Badge>
+                    </span>
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => { setEditingSalle(salle); setIsDialogOpen(true); }}
-                      >
+                      <Button variant="outline" size="sm" onClick={() => openEditDialog(salle)}>
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeleteSalle(salle.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
+                      <Button variant="outline" size="sm" onClick={() => handleDeleteSalle(salle.id)}>
+                        <Trash className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
@@ -204,89 +274,62 @@ const SallesManagement = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingSalle ? 'Modifier la Salle' : 'Ajouter une Salle'}</DialogTitle>
+            <DialogTitle>Modifier la salle</DialogTitle>
             <DialogDescription>
-              Remplissez les informations de la salle
+              Modifiez les informations de la salle
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="Nom de la salle"
-              value={editingSalle ? editingSalle.name : newSalle.name}
-              onChange={(e) => editingSalle 
-                ? setEditingSalle({...editingSalle, name: e.target.value})
-                : setNewSalle({...newSalle, name: e.target.value})
-              }
-            />
-            <Select 
-              value={editingSalle ? editingSalle.type : newSalle.type} 
-              onValueChange={(value) => editingSalle 
-                ? setEditingSalle({...editingSalle, type: value})
-                : setNewSalle({...newSalle, type: value})
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Type de salle" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Amphithéâtre">Amphithéâtre</SelectItem>
-                <SelectItem value="TD">TD</SelectItem>
-                <SelectItem value="TP">TP</SelectItem>
-                <SelectItem value="Laboratoire">Laboratoire</SelectItem>
-                <SelectItem value="Conférence">Conférence</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="Capacité"
-              type="number"
-              value={editingSalle ? editingSalle.capacity : newSalle.capacity}
-              onChange={(e) => editingSalle 
-                ? setEditingSalle({...editingSalle, capacity: e.target.value})
-                : setNewSalle({...newSalle, capacity: e.target.value})
-              }
-            />
-            <Input
-              placeholder="Bâtiment"
-              value={editingSalle ? editingSalle.building : newSalle.building}
-              onChange={(e) => editingSalle 
-                ? setEditingSalle({...editingSalle, building: e.target.value})
-                : setNewSalle({...newSalle, building: e.target.value})
-              }
-            />
-            <Input
-              placeholder="Étage"
-              value={editingSalle ? editingSalle.floor : newSalle.floor}
-              onChange={(e) => editingSalle 
-                ? setEditingSalle({...editingSalle, floor: e.target.value})
-                : setNewSalle({...newSalle, floor: e.target.value})
-              }
-            />
-            <Select 
-              value={editingSalle ? editingSalle.status : newSalle.status} 
-              onValueChange={(value) => editingSalle 
-                ? setEditingSalle({...editingSalle, status: value})
-                : setNewSalle({...newSalle, status: value})
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Disponible">Disponible</SelectItem>
-                <SelectItem value="Occupée">Occupée</SelectItem>
-                <SelectItem value="Maintenance">Maintenance</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {editingSalle && (
+            <div className="space-y-4">
+              <Input
+                placeholder="Nom de la salle"
+                value={editingSalle.name}
+                onChange={(e) => setEditingSalle({...editingSalle, name: e.target.value})}
+              />
+              <Input
+                placeholder="Capacité"
+                type="number"
+                value={editingSalle.capacity.toString()}
+                onChange={(e) => setEditingSalle({...editingSalle, capacity: parseInt(e.target.value)})}
+              />
+              <Select value={editingSalle.type} onValueChange={(value) => setEditingSalle({...editingSalle, type: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Type de salle" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Amphithéâtre">Amphithéâtre</SelectItem>
+                  <SelectItem value="Salle de cours">Salle de cours</SelectItem>
+                  <SelectItem value="Laboratoire">Laboratoire</SelectItem>
+                  <SelectItem value="Salle informatique">Salle informatique</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Équipements"
+                value={editingSalle.equipment || ''}
+                onChange={(e) => setEditingSalle({...editingSalle, equipment: e.target.value})}
+              />
+              <Select value={editingSalle.status} onValueChange={(value) => setEditingSalle({...editingSalle, status: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Disponible">Disponible</SelectItem>
+                  <SelectItem value="Occupée">Occupée</SelectItem>
+                  <SelectItem value="Maintenance">Maintenance</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               Annuler
             </Button>
-            <Button onClick={editingSalle ? handleEditSalle : handleAddSalle}>
-              {editingSalle ? 'Modifier' : 'Ajouter'}
+            <Button onClick={handleEditSalle}>
+              Sauvegarder
             </Button>
           </DialogFooter>
         </DialogContent>
